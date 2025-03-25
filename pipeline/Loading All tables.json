@@ -72,7 +72,7 @@
 								}
 							},
 							"linkedServiceName": {
-								"referenceName": "synapseworkspace0323-WorkspaceDefaultSqlServer",
+								"referenceName": "linkedService1",
 								"type": "LinkedServiceReference"
 							}
 						}
