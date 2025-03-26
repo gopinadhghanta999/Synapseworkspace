@@ -1,0 +1,349 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"workspaceName": {
+			"type": "string",
+			"metadata": "Workspace name",
+			"defaultValue": "synapseworkspace0323"
+		},
+		"golddatalake_accountKey": {
+			"type": "secureString",
+			"metadata": "Secure string for 'accountKey' of 'golddatalake'"
+		},
+		"synapseworkspace0323-WorkspaceDefaultSqlServer_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'synapseworkspace0323-WorkspaceDefaultSqlServer'",
+			"defaultValue": "Integrated Security=False;Encrypt=True;Connection Timeout=30;Data Source=tcp:synapseworkspace0323.sql.azuresynapse.net,1433;Initial Catalog=@{linkedService().DBName}"
+		},
+		"golddatalake_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://datalakesynapsee.dfs.core.windows.net/"
+		},
+		"linkedService1_properties_typeProperties_server": {
+			"type": "string",
+			"defaultValue": "synapseworkspace0323-ondemand.sql.azuresynapse.net"
+		},
+		"linkedService1_properties_typeProperties_database": {
+			"type": "string",
+			"defaultValue": "gold_database"
+		},
+		"synapseworkspace0323-WorkspaceDefaultStorage_properties_typeProperties_url": {
+			"type": "string",
+			"defaultValue": "https://synapsebaselake0323.dfs.core.windows.net"
+		}
+	},
+	"variables": {
+		"workspaceId": "[concat('Microsoft.Synapse/workspaces/', parameters('workspaceName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('workspaceName'), '/Loading All tables')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Get TableNames",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "Binary1",
+								"type": "DatasetReference",
+								"parameters": {}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobFSReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "BinaryReadSettings"
+							}
+						}
+					},
+					{
+						"name": "ForEach Table",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Get TableNames",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Get TableNames').output.childItems",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "Stored procedure1",
+									"type": "SqlServerStoredProcedure",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"storedProcedureName": "[dbo].[CreateSQLServerlessView_gold]",
+										"storedProcedureParameters": {
+											"viewName": {
+												"value": {
+													"value": "@item().name",
+													"type": "Expression"
+												},
+												"type": "String"
+											}
+										}
+									},
+									"linkedServiceName": {
+										"referenceName": "linkedService1",
+										"type": "LinkedServiceReference"
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {}
+				},
+				"annotations": [],
+				"lastPublishTime": "2025-03-24T18:23:21Z"
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/Binary1')]",
+				"[concat(variables('workspaceId'), '/linkedServices/linkedService1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Binary1')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "golddatalake",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobFSLocation",
+						"folderPath": "SalesLT",
+						"fileSystem": "gold"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/golddatalake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/golddatalake')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('golddatalake_properties_typeProperties_url')]",
+					"accountKey": {
+						"type": "SecureString",
+						"value": "[parameters('golddatalake_accountKey')]"
+					}
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/linkedService1')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"server": "[parameters('linkedService1_properties_typeProperties_server')]",
+					"database": "[parameters('linkedService1_properties_typeProperties_database')]",
+					"encrypt": "mandatory",
+					"trustServerCertificate": false,
+					"authenticationType": "SystemAssignedManagedIdentity"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/synapseworkspace0323-WorkspaceDefaultSqlServer')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"parameters": {
+					"DBName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "AzureSqlDW",
+				"typeProperties": {
+					"connectionString": "[parameters('synapseworkspace0323-WorkspaceDefaultSqlServer_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/synapseworkspace0323-WorkspaceDefaultStorage')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobFS",
+				"typeProperties": {
+					"url": "[parameters('synapseworkspace0323-WorkspaceDefaultStorage_properties_typeProperties_url')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AutoResolveIntegrationRuntime')]",
+			"type": "Microsoft.Synapse/workspaces/integrationRuntimes",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"type": "Managed",
+				"typeProperties": {
+					"computeProperties": {
+						"location": "AutoResolve",
+						"dataFlowProperties": {
+							"computeType": "General",
+							"coreCount": 8,
+							"timeToLive": 0
+						}
+					}
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Create Schema for youtubegold')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "create SCHEMA gold;",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "youtube_project_1",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/create view for youtubegold')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "-------- Create viw for Calendar ---------\n\ncreate view gold.calendar\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/AdventureWorks_Calendar/',\n        FORMAT='PARQUET'\n    )as quer1\n\n-------- Create viw for AdventureWorks_Customers ---------\n\ncreate view gold.Customers\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/AdventureWorks_Customers/',\n        FORMAT='PARQUET'\n    )as quer1\n\n-------- Create viw for Product_Categories ---------\n\ncreate view gold.Product_Categories\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/AdventureWorks_Product_Categories/',\n        FORMAT='PARQUET'\n    )as quer1\n\n-------- Create viw for Products ---------\n\ncreate view gold.Products\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/AdventureWorks_Products/',\n        FORMAT='PARQUET'\n    )as quer1\n\n-------- Create viw for Returns ---------\n\ncreate view gold.Returns\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/AdventureWorks_Returns/',\n        FORMAT='PARQUET'\n    )as quer1\n\n-------- Create viw for Sales ---------\n\ncreate view gold.Sales\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/AdventureWorks_Sales/',\n        FORMAT='PARQUET'\n    )as quer1\n\n-------- Create viw for Territories ---------\n\ncreate view gold.Territories\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/AdventureWorks_Territories/',\n        FORMAT='PARQUET'\n    )as quer1\n\n-------- Create viw for Product_Subcategories ---------\n\ncreate view gold.Product_Subcategories\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/Product_Subcategories/',\n        FORMAT='PARQUET'\n    )as quer1",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "youtube_project_1",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/synapsesparkpo')]",
+			"type": "Microsoft.Synapse/workspaces/bigDataPools",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"autoPause": {
+					"enabled": true,
+					"delayInMinutes": 15
+				},
+				"autoScale": {
+					"enabled": true,
+					"maxNodeCount": 20,
+					"minNodeCount": 3
+				},
+				"nodeCount": 10,
+				"nodeSize": "Medium",
+				"nodeSizeFamily": "MemoryOptimized",
+				"sparkVersion": "3.4",
+				"isComputeIsolationEnabled": false,
+				"sessionLevelPackagesEnabled": false,
+				"annotations": []
+			},
+			"dependsOn": [],
+			"location": "eastus2"
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"metadata": {
+						"language": "sql"
+					}
+				}
+			},
+			"dependsOn": []
+		}
+	]
+}
