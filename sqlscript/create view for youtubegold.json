@@ -1,0 +1,17 @@
+{
+	"name": "create view for youtubegold",
+	"properties": {
+		"content": {
+			"query": "-------- Create viw for Calendar ---------\n\ncreate view gold.calendar\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/AdventureWorks_Calendar/',\n        FORMAT='PARQUET'\n    )as quer1\n\n-------- Create viw for AdventureWorks_Customers ---------\n\ncreate view gold.Customers\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/AdventureWorks_Customers/',\n        FORMAT='PARQUET'\n    )as quer1\n\n-------- Create viw for Product_Categories ---------\n\ncreate view gold.Product_Categories\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/AdventureWorks_Product_Categories/',\n        FORMAT='PARQUET'\n    )as quer1\n\n-------- Create viw for Products ---------\n\ncreate view gold.Products\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/AdventureWorks_Products/',\n        FORMAT='PARQUET'\n    )as quer1\n\n-------- Create viw for Returns ---------\n\ncreate view gold.Returns\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/AdventureWorks_Returns/',\n        FORMAT='PARQUET'\n    )as quer1\n\n-------- Create viw for Sales ---------\n\ncreate view gold.Sales\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/AdventureWorks_Sales/',\n        FORMAT='PARQUET'\n    )as quer1\n\n-------- Create viw for Territories ---------\n\ncreate view gold.Territories\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/AdventureWorks_Territories/',\n        FORMAT='PARQUET'\n    )as quer1\n\n-------- Create viw for Product_Subcategories ---------\n\ncreate view gold.Product_Subcategories\nAS\nselect * \nfrom \n    OPENROWSET(\n        BULK 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver/Product_Subcategories/',\n        FORMAT='PARQUET'\n    )as quer1",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "youtube_project_1",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
