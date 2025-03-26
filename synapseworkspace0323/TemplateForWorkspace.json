@@ -288,6 +288,46 @@
 			"dependsOn": []
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/External Tables')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "create MASTER KEY ENCRYPTION BY PASSWORD ='Azure@143';\n\ncreate DATABASE SCOPED CREDENTIAL youtube_project\nWITH\n    IDENTITY ='Managed identity'\n\ncreate EXTERNAL DATA SOURCE source_silver\nWITH\n(\n    LOCATION= 'https://datalakesynapsee.dfs.core.windows.net/youtubesilver',\n    CREDENTIAL = youtube_project\n)\n\ncreate EXTERNAL DATA SOURCE source_gold\nWITH\n(\n    LOCATION= 'https://datalakesynapsee.dfs.core.windows.net/youtubegold',\n    CREDENTIAL = youtube_project\n)\n\n\ncreate EXTERNAL FILE FORMAT format_parquet\nWITH\n(\n    FORMAT_TYPE = PARQUET,\n    DATA_COMPRESSION = 'org.apache.hadoop.io.compress.SnappyCodec'\n)\n\n\n------------------------\n--Create External tables Extsales--------------------\n\n\nCREATE EXTERNAL TABLE gold.extsales\nWITH\n(\n    LOCATION='extsales',\n    DATA_SOURCE=source_gold,\n    FILE_FORMAT=format_parquet\n)\nAS\nSELECT * from gold.Sales",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "youtube_project_1",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
+			"type": "Microsoft.Synapse/workspaces/sqlscripts",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"content": {
+					"query": "select * from gold.Customers",
+					"metadata": {
+						"language": "sql"
+					},
+					"currentConnection": {
+						"databaseName": "youtube_project_1",
+						"poolName": "Built-in"
+					},
+					"resultLimit": 5000
+				},
+				"type": "SqlQuery"
+			},
+			"dependsOn": []
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/create view for youtubegold')]",
 			"type": "Microsoft.Synapse/workspaces/sqlscripts",
 			"apiVersion": "2019-06-01-preview",
@@ -331,19 +371,6 @@
 			},
 			"dependsOn": [],
 			"location": "eastus2"
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/SQL script 1')]",
-			"type": "Microsoft.Synapse/workspaces/sqlscripts",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"content": {
-					"metadata": {
-						"language": "sql"
-					}
-				}
-			},
-			"dependsOn": []
 		}
 	]
 }
