@@ -1,6 +1,9 @@
 {
 	"name": "Create Schema for youtubegold",
 	"properties": {
+		"folder": {
+			"name": "project_1"
+		},
 		"content": {
 			"query": "create SCHEMA gold;",
 			"metadata": {
