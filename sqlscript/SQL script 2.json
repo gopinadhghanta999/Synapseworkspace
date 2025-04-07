@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 2",
+	"properties": {
+		"content": {
+			"query": "CREATE EXTERNAL DATA SOURCE myadls\nWITH (\n    LOCATION = 'abfss://demo@synapsedl1.dfs.core.windows.net/'\n);\n\n\n\nSELECT \n    JSON_VALUE(value, '$.vendorID') AS vendorID,\n    JSON_VALUE(value, '$.tpepPickupDateTime') AS pickupTime,\n    JSON_VALUE(value, '$.tpepDropoffDateTime') AS dropoffTime,\n    JSON_VALUE(value, '$.passengerCount') AS passengerCount,\n    JSON_VALUE(value, '$.tripDistance') AS tripDistance,\n    JSON_VALUE(value, '$.puLocationId') AS pickupLoc,\n    JSON_VALUE(value, '$.doLocationId') AS dropLoc,\n    JSON_VALUE(value, '$.startLon') AS startLon,\n    JSON_VALUE(value, '$.endLat') AS endLat\nFROM OPENROWSET(\n    BULK '*.json',\n    DATA_SOURCE = 'myadls',\n    FORMAT = 'CSV',\n    FIELDTERMINATOR = '0x0b',  -- dummy separator\n    FIELDQUOTE = '0x0b'        -- dummy quote to treat entire line as a single column\n) WITH (\n    value NVARCHAR(MAX)\n) AS jsonData\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "demo",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
